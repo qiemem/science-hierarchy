@@ -1,0 +1,1 @@
+The data is stored in `data/neuro.sqlite`. It's a sqlite3 database, which is just a file; no server needed. But you will need sqlite3 to interact with it. I believe it comes in OS X, but if not, just use homebrew or something to get it.

@@ -1,0 +1,202 @@
+% THIS IS SIGPROC-SP.TEX - VERSION 3.1
+% WORKS WITH V3.2SP OF ACM_PROC_ARTICLE-SP.CLS
+% APRIL 2009
+%
+% It is an example file showing how to use the 'acm_proc_article-sp.cls' V3.2SP
+% LaTeX2e document class file for Conference Proceedings submissions.
+% ----------------------------------------------------------------------------------------------------------------
+% This .tex file (and associated .cls V3.2SP) *DOES NOT* produce:
+%       1) The Permission Statement
+%       2) The Conference (location) Info information
+%       3) The Copyright Line with ACM data
+%       4) Page numbering
+% ---------------------------------------------------------------------------------------------------------------
+% It is an example which *does* use the .bib file (from which the .bbl file
+% is produced).
+% REMEMBER HOWEVER: After having produced the .bbl file,
+% and prior to final submission,
+% you need to 'insert'  your .bbl file into your source .tex file so as to provide
+% ONE 'self-contained' source file.
+%
+% Questions regarding SIGS should be sent to
+% Adrienne Griscti ---> griscti@acm.org
+%
+% Questions/suggestions regarding the guidelines, .tex and .cls files, etc. to
+% Gerald Murray ---> murray@hq.acm.org
+%
+% For tracking purposes - this is V3.1SP - APRIL 2009
+
+\documentclass{acm_proc_article-sp}
+
+\begin{document}
+
+\title{Topic Analysis and Hierarchical Clustering on Scientific Papers}
+%
+% You need the command \numberofauthors to handle the 'placement
+% and alignment' of the authors beneath the title.
+%
+% For aesthetic reasons, we recommend 'three authors at a time'
+% i.e. three 'name/affiliation blocks' be placed beneath the title.
+%
+% NOTE: You are NOT restricted in how many 'rows' of
+% "name/affiliations" may appear. We just ask that you restrict
+% the number of 'columns' to three.
+%
+% Because of the available 'opening page real-estate'
+% we ask you to refrain from putting more than six authors
+% (two rows with three columns) beneath the article title.
+% More than six makes the first-page appear very cluttered indeed.
+%
+% Use the \alignauthor commands to handle the names
+% and affiliations for an 'aesthetic maximum' of six authors.
+% Add names, affiliations, addresses for
+% the seventh etc. author(s) as the argument for the
+% \additionalauthors command.
+% These 'additional authors' will be output/set for you
+% without further effort on your part as the last section in
+% the body of your article BEFORE References or any Appendices.
+
+\numberofauthors{3} %  in this sample file, there are a *total*
+% of EIGHT authors. SIX appear on the 'first-page' (for formatting
+% reasons) and the remaining two appear in the \additionalauthors section.
+%
+\author{
+% You can go ahead and credit any number of authors here,
+% e.g. one 'row of three' or two rows (consisting of one row of three
+% and a second row of one, two or three).
+%
+% The command \alignauthor (no curly braces needed) should
+% precede each author name, affiliation/snail-mail address and
+% e-mail address. Additionally, tag each line of
+% affiliation/address with \affaddr, and tag the
+% e-mail address with \email.
+%
+%
+\alignauthor Raeed Chowdury\\
+	\affaddr{Department of Biomedical Engineering}\\
+	\affaddr{Northwestern University}\\
+	\affaddr{633 Clark Street}\\
+	\affaddr{Evanston, IL}\\
+	\email{raeed@u.northwestern.edu}
+\alignauthor Jeremy Needle\\
+	\affaddr{Department of Linguistics}\\
+	\affaddr{Northwestern University}\\
+	\affaddr{633 Clark Street}\\
+	\affaddr{Evanston, IL}\\
+	\email{jneedle@ u.northwestern.edu}
+\alignauthor Bryan Head\\
+	\affaddr{Department of Electrical Engineering and Computer Science}\\
+	\affaddr{Northwestern University}\\
+	\affaddr{633 Clark Street}\\
+	\affaddr{Evanston, IL}\\
+	\email{bryan.head@ u.northwestern.edu}
+}
+
+\date{16 November 2012}
+
+\maketitle
+\begin{abstract}
+	We will automatically find relationships between academic papers by determining keywords for each document, then clustering the documents into hierarchically-organized topic groups. We will compare multiple methods of clustering, and verify the resulting topic groups with human judgments of relatedness.
+\end{abstract}
+
+\keywords{topic analysis, hierarchical clustering} % NOT required for Proceedings
+
+\section{Intellectual Interest}
+With the increase of  multidisciplinary scientific research, analyzing and clustering scientific papers by topic would allow researchers to be exposed to papers related to their work that they might not otherwise be aware of. Automatic analysis can avoid the preconceptions that would keep a researcher from recognizing related research outside of his immediate category. Additionally, it would allow researchers to more easily find other researchers to collaborate with.
+
+\section{Dataset}
+Our current top candidate is a dataset provided by Professor Konrad Kording (associated with Physiology and Applied Math). The dataset contains document titles, abstract, year of publication, journal, authors, and citations. The dataset is in MySQL, and it contains 48,222 documents.
+
+We are also considering arXiv as an alternative. PubMed is another possibility. Both support bulk downloads.
+
+\section{Task}
+We will compare performance of multiple unsupervised learning algorithms in clustering documents hierarchically by topic using the words in the abstract as features. If we have time, we will also use additional features like authors and citations, as well as their positions in the implicit networks created by collaborations and citations, to inform the clustering of topics. 
+
+We will restrict our analysis to the abstracts of the documents as the abstracts contain the words that best represent the content of the documents. To construct our feature space, we will first identify a corpus-wide list of significant words. These words will be identified by calculating each word's corpus-wide total TF-IDF score and then either thresholding or picking the $k$-best. Next, we will represent each document as a vector of its TF-IDF scores for each of the corpus-wide significant words. We will cluster on these vectors.
+
+We are using vectors of TF-IDF scores as our feature space because they (ideally) identify which words are most significant to each document and the degree of that significance. We are limiting these vectors to a corpus-wide list of significant words to reduce dimensionality.
+
+The dendrograms resulting from this process will be labeled with the core terms that distinguish each cluster. Hence, our results should be quite human readable, despite the high dimensionality of our feature space.
+
+\section{Aspect of Task to Optimize}
+Documents will be clustered by two techniques of bisecting k-means to produce a dendrogram of clustering levels to be evaluated later. First, we will use a traditional bisecting k-means method; second, we will use a method in which the feature set is recalculated by TF-IDF at each iteration. If there is time, we can compare these to traditional agglomerative methods. 
+
+Note that relatively recent results have shown that bisecting k-means in general outperforms agglomerative methods for hierarchical clustering of documents.\cite{steinbach2000}\cite{zhao2005}
+
+\section{Performance Evaluation}
+We will evaluate the performance of this algorithm manually, comparing our clustering method with a random clustering on the feature space created using TF-IDF.
+
+Our method of comparison will consist presenting a random abstract from the corpus to the human subject, as well as one abstract in the same cluster as this random abstract from our method of clustering and one abstract in the same cluster as the random abstract from our baseline clustering method. The human subject will then select between the two latter abstracts according to which seems most relevant to the given random abstract. Theoretically, this should give a good indication of how helpful our clustering is for scientists looking for relevant papers, as compared to our baseline random clustering over the feature space.
+
+\section{Baseline}
+Our baseline will be generating the dendrograms completely at random. This helps validate our feature space. We will compare both the traditional bisecting $k$-means as well as our modified $k$-means to this baseline.
+
+If we have time, we will also be validating against untrained bisecting $k$-means. Essentially,  we will choose two random points in the feature space; each document will then be clustered according to which random point it is closest to, using Euclidean distance. We will keep randomly bisecting the clusters in this manner as usual in bisecting $k$-means. This method of random clustering helps demonstrate that the training is actually improving things.
+
+\section{Software to be Developed}
+\begin{itemize}
+	\item Adapt/Implement k-means clustering (Python)
+	\item Adapt/Implement iterative rebasing k-means clustering (Python)
+	\item Adapt/Implement TF-IDF for keyword identification (Python)
+	\item Keyword testing algorithm for thresholding
+	\item Basic plumbing between the database and the learning algorithms (Python/SQL)
+\end{itemize}
+
+\section{Possible Software Packages to be Used}
+\begin{itemize}
+	\item MySQL (or some other SQL based database)
+	\item tfidf (Python library)
+	\item numpy (Python library)
+	\item matplotlib (Python library)
+\end{itemize}
+
+\section{Job of Each Team Member}
+\begin{tabular}{|l|l|}
+	\hline
+	Raeed Chowdhury & content specialist (neuro), stats\\
+	\hline
+	Bryan Head & primary coder, database person\\
+	\hline
+	Jeremy Needle & stats, TF-IDF, writeups\\
+	\hline
+\end{tabular}
+
+\section{Milestones}
+
+\begin{tabular}{|l|l|l|}
+	\hline
+	\multicolumn{1}{|c}{Milestone} & \multicolumn{1}{|c}{Member} & \multicolumn{1}{|c|}{Date}\\
+	\hline \hline
+	Data collected: Kording & Raeed & 11/9/2012 \\
+	\hline
+	Data collection: arXiv & Bryan & 11/16/2012 \\
+	\hline
+	Revised Proposal & -- & 11/16/2012 \\
+	\hline
+	Database hooks & Bryan & 11/18/2012\\
+	\hline
+	TF-IDF Verification & Jeremy & 11/19/2012\\
+	\hline
+	k-mean implementation & Bryan & 11/23/2012\\
+	\hline
+	Cluster Verification & Raeed & 11/26/2012\\
+	\hline
+	Cluster Performance Comparisons & Raeed, Jeremy & 12/3/2012\\
+	\hline
+	Initial Results & -- & 12/7/2012\\
+	\hline
+	Poster Session & -- & 12/13/2012\\
+	\hline
+\end{tabular}
+%
+% The following two commands are all you need in the
+% initial runs of your .tex file to
+% produce the bibliography for the citations in your paper.
+\bibliographystyle{abbrv}
+\nocite{*}
+\bibliography{proposal}  % sigproc.bib is the name of the Bibliography in this case
+% You must have a proper ".bib" file
+%  and remember to run:
+% latex bibtex latex latex
+% to resolve all references
+\end{document}
