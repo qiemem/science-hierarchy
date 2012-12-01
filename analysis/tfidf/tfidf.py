@@ -97,6 +97,10 @@ class TfIdf:
       else:
         self.term_num_docs[word] = 1
 
+  def calculate_stopwords(self, threshold = 0.01):
+    return [term for (term, num) in self.term_num_docs.items()
+            if num > threshold * self.num_docs]
+
   def save_corpus_to_file(self, idf_filename, stopword_filename,
                           STOPWORD_PERCENTAGE_THRESHOLD = 0.01):
     """Save the idf dictionary and stopword list to the specified file."""
@@ -105,14 +109,9 @@ class TfIdf:
     output_file.write(str(self.num_docs) + "\n")
     for term, num_docs in self.term_num_docs.items():
       output_file.write(term + ": " + str(num_docs) + "\n")
-
-    sorted_terms = sorted(self.term_num_docs.items(), key=itemgetter(1),
-                          reverse=True)
     stopword_file = open(stopword_filename, "w")
-    for term, num_docs in sorted_terms:
-      if num_docs < STOPWORD_PERCENTAGE_THRESHOLD * self.num_docs:
-        break
-
+    stopwords = calculate_stopwords(STOPWORD_PERCENTAGE_THRESHOLD)
+    for term in stopwords:
       stopword_file.write(term + "\n")
 
   def get_num_docs(self):
