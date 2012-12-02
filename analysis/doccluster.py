@@ -26,17 +26,17 @@ def strip_non_alphanum(string, pattern=re.compile('[^A-Za-z ]')):
 
 #docs = list(set(db.get_clean_docs('neuro_data/neuro.sqlite')))
 class DendroDoc:
-    def __init__(self, docs, num_vec_terms=100, num_doc_keyterms=3, stopword_ratio=.15):
+    def __init__(self, docs, num_vec_words=100, num_doc_keywords=3, stopword_ratio=.15):
         """
-        Calculates idf values. Terms that appear in more than `stopword_ratio`
-        of the documents are given an idf of 0. Gets top `num_doc_keyterms` from
-        each doc and picks the `num_vec_terms` most common.
+        Calculates idf values. words that appear in more than `stopword_ratio`
+        of the documents are given an idf of 0. Gets top `num_doc_keywords` from
+        each doc and picks the `num_vec_words` most common.
         
         Input:
         docs - A list of (title, body) pairs.
-        num_vec_terms - Number of terms to make the feature space out of. By
+        num_vec_words - Number of words to make the feature space out of. By
             definition, the number of dimensions. Defaults to 100.
-        num_doc_keyterms - Number of keywords to pick from each document.
+        num_doc_keywords - Number of keywords to pick from each document.
             Defaults to 3.
         """
         self.docs = docs
@@ -44,18 +44,18 @@ class DendroDoc:
         self.idf = tfidf.TfIdf()
         for doc in self.clean_docs:
             self.idf.add_input_document(doc)
-        self.idf.stopterms = self.idf.calculate_stopterms(.15) # .15 just based on trying random nums
+        self.idf.stopwords = self.idf.calculate_stopwords(.15) # .15 just based on trying random nums
 
         # At > top 3, I started seeing stopwords enter
-        self.top_terms = [p for doc in self.clean_docs 
-                for p in self.idf.get_doc_keyterms(doc)[:num_doc_keyterms]]
-        self.top_term_counts = Counter(p[0] for p in self.top_terms)
-        self.key_terms = [term for (term, _) in self.top_term_counts.most_common(num_vec_terms)]
+        self.top_words = [p for doc in self.clean_docs 
+                for p in self.idf.get_doc_keywords(doc)[:num_doc_keywords]]
+        self.top_word_counts = Counter(p[0] for p in self.top_words)
+        self.key_words = [word for (word, _) in self.top_word_counts.most_common(num_vec_words)]
 
         self.vecs_to_docs = defaultdict(list)
         for (raw_doc, doc) in zip(self.docs, self.clean_docs):
-            doc_dict = dict(self.idf.get_doc_keyterms(doc))
-            vector = tuple(doc_dict.get(term, 0) for term in self.key_terms)
+            doc_dict = dict(self.idf.get_doc_keywords(doc))
+            vector = tuple(doc_dict.get(word, 0) for word in self.key_words)
             self.vecs_to_docs[vector].append(raw_doc)
         self.doc_vectors = np.array(list(self.vecs_to_docs.keys()))
         self.tree = kmeans.bisecting_kmeans(self.doc_vectors)
@@ -66,23 +66,20 @@ class DendroDoc:
         """
         return self.vecs_to_docs[tuple(vector)]
 
-    def get_term_value_pairs(self, vector):
+    def get_word_value_pairs(self, vector):
         """
-        Converts returns a list of (term, value) pairs for the given vector,
+        Converts returns a list of (word, value) pairs for the given vector,
         sorted by value.
         """
-        term_value_pairs = zip(self.key_terms, vector)
-        return sorted(term_value_pairs, key=lambda p:abs(p[1]), reverse=True)
+        word_value_pairs = zip(self.key_words, vector)
+        return sorted(word_value_pairs, key=lambda p:abs(p[1]), reverse=True)
 
-    def term_diffs(self,tree):
+    def word_diffs(self,tree):
         """
         Shows what the tree is splitting on. A positive value means the left
         child features that word more.
         """
-        return get_term_value_pairs(tree.means[0] - tree.means[1])
-        tds = zip(self.key_terms, tree.means[0]-tree.means[1])
-        return sorted(tds, key=lambda p:abs(p[1]), reverse = True)
-
+        return self.get_word_value_pairs(tree.means[0] - tree.means[1])
 
     def write_gdf(self, filename, tree=None):
         """
@@ -93,14 +90,14 @@ class DendroDoc:
         with open(filename,'w') as f:
             i = 0
             tree_ids = {}
-            f.write('nodedef>name VARCHAR,terms VARCHAR\n')
+            f.write('nodedef>name VARCHAR,words VARCHAR\n')
             for t in tree.dft():
                 tree_ids[t]=i
                 if hasattr(t, 'means'):
-                    terms = ' '.join(':'.join(map(str,p)) for p in self.term_diffs(t)[:5])
+                    words = ' '.join(':'.join(map(str,p)) for p in self.word_diffs(t)[:5])
                 else:
-                    terms = 'leaf'
-                f.write('{},{}\n'.format(i, terms))
+                    words = 'leaf'
+                f.write('{},{}\n'.format(i, words))
                 i+=1
             f.write('edgedef>node1 VARCHAR,node2 VARCHAR\n')
             for t in tree.dft():
@@ -136,11 +133,11 @@ class DendroDoc:
             i = 1
             for t in tree.dft(depth):
                 try:
-                    terms = ' '.join(':'.join(map(str,p)) for p in self.term_diffs(t)[:5])
+                    words = ' '.join(':'.join(map(str,p)) for p in self.word_diffs(t)[:5])
                 except AttributeError:
                     vec = t.values[0]
-                    terms = '|'.join(strip_non_alphanum(title) for (title, body) in self.get_docs(vec))
-                nodesfile.write('  <node id="id{}" name="{}" location="{},{}" strength="1" />\n'.format(i, terms, np.random.random(), np.random.random()))
+                    words = '|'.join(strip_non_alphanum(title) for (title, _) in self.get_docs(vec))
+                nodesfile.write('  <node id="id{}" name="{}" location="{},{}" strength="1" />\n'.format(i, words, np.random.random(), np.random.random()))
                 tree_ids[t] = i
                 i+=1
             nodesfile.write('</nodes>')
