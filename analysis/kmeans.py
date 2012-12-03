@@ -48,16 +48,16 @@ def kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
 def bisecting_kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
     print(len(xs))
     if len(xs) < k:
-        return Leaf(xs)
+        return Tree(np.mean(xs,0), [])
     else:
         bi = lambda ys : bisecting_kmeans(ys, k, dist)
         means = kmeans(xs, k, dist)
         clusters = get_clusters(xs, means, dist)
-        return Tree(means, [bi(c) for c in clusters])
+        return Tree(np.mean(xs,0), [bi(c) for c in clusters])
 
 class Tree:
-    def __init__(self, means, children):
-        self.means = means
+    def __init__(self, mean, children):
+        self.mean = mean
         self.children = children
 
     def dft(self, depth=-1):
@@ -78,13 +78,3 @@ class Tree:
     @property
     def num_points(self):
         return sum(c.num_points for c in self.children)
-
-class Leaf:
-    def __init__(self, values):
-        self.values = values
-        self.depth = 1
-        self.num_nodes = 1
-        self.num_points = len(values)
-
-    def dft(self, depth=-1):
-        yield self

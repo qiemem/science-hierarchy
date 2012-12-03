@@ -66,7 +66,7 @@ class DendroDoc:
         """
         return self.vecs_to_docs[tuple(vector)]
 
-    def get_word_value_pairs(self, vector):
+    def word_value_pairs(self, vector):
         """
         Converts returns a list of (word, value) pairs for the given vector,
         sorted by value.
@@ -79,7 +79,7 @@ class DendroDoc:
         Shows what the tree is splitting on. A positive value means the left
         child features that word more.
         """
-        return self.get_word_value_pairs(tree.means[0] - tree.means[1])
+        return self.word_value_pairs(tree.children[0].mean - tree.children[1].mean)
 
     def write_gdf(self, filename, tree=None):
         """
@@ -132,10 +132,10 @@ class DendroDoc:
             nodesfile.write('<?xml version="1.0 ?>\n<nodes>\n  <projection name="LonLat" />\n')
             i = 1
             for t in tree.dft(depth):
-                try:
-                    words = ' '.join(':'.join(map(str,p)) for p in self.word_diffs(t)[:5])
-                except AttributeError:
-                    vec = t.values[0]
+                if len(t.children)>0:
+                    words = ' '.join(':'.join(map(str, p)) for p in self.word_value_pairs(t.mean)[:5])
+                else:
+                    vec = t.mean
                     words = '|'.join(strip_non_alphanum(title) for (title, _) in self.get_docs(vec))
                 nodesfile.write('  <node id="id{}" name="{}" location="{},{}" strength="1" />\n'.format(i, words, np.random.random(), np.random.random()))
                 tree_ids[t] = i
