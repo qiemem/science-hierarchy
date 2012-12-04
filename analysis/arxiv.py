@@ -1,12 +1,7 @@
 import arxiv_data.db2py as db2py
-import doccluster
-import tfidf.tfidf as tfidf
+import doccluster as dc
 
 docs = db2py.get_docs('arxiv_data/arxiv.sqlite')
-clean_docs = [doccluster.clean_doc(doc) for doc in docs]
+vecs_to_docs, keywords = dc.vectorize_corpus(docs)
 
-idf = tfidf.TfIdf()
-for doc in clean_docs:
-    idf.add_input_document(doc)
-
-dd = doccluster.DendroDoc(docs, 10)
+tree = dc.make_tree(vecs_to_docs)

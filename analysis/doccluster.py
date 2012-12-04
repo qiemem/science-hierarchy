@@ -7,6 +7,46 @@ import os
 import re
 
 
+def vectorize_corpus(docs, n_keywords = 100, n_doc_keywords = 3, tfidf_vecs = False):
+    """
+    Returns a dictionary of vectors mapped to their corresponding documents as
+    well as the keywords used. Uses reasonable defaults, but lets you control
+    major parameters. USE THIS.
+    
+    Inputs:
+    docs - A list of (title, abstract) pairs
+    n_keywords - Number of keywords to use, ie the length of the resulting vectors
+        Defaults to 100.
+    n_doc_keywords - Number of top words to use from each document in creating
+        the list of keywords. Defualts to 3.
+    tfidf_vecs - If True, tfidf values of each word are used as elements of the
+        vectors. Otherwise, uses word containment. Defaults to False.
+
+    Output:
+    vecs_to_docs - A dict from vectors to lists of documents.
+    keywords - The list of keywords used.
+    """
+    clean_docs = [clean_doc(doc) for doc in docs]
+    idf = get_idf(clean_docs)
+    keywords = get_corpus_keywords(clean_docs, idf, n_keywords, n_doc_keywords)
+    if tfidf_vecs:
+        def doc_quant(doc):
+            doc_dict = dict(idf.get_doc_keywords(doc))
+            return lambda w : doc_dict.get(word, 0)
+    else:
+        def doc_quant(doc):
+            return lambda w : w in doc
+    vecs_to_docs = get_vecs_to_docs(clean_docs, keywords, doc_quant)
+    clean_to_raw = dict(zip(clean_docs, docs))
+    vecs_to_docs = {k : [clean_to_raw[d] for d in v] for (k,v) in vecs_to_docs.items()}
+    return vecs_to_docs, keywords
+
+def make_tree(vecs_to_docs):
+    """
+    Clusters a vector->docs dict.
+    """
+    return kmeans.bisecting_kmeans(np.array(list(vecs_to_docs.keys())))
+
 def clean_doc(doc):
     """
     Input:
@@ -56,21 +96,6 @@ def get_vecs_to_docs(clean_docs, keywords,
         vecs_to_docs[vectorize(keywords, word_quant)].append(doc)
     return vecs_to_docs
 
-def vectorize_corpus(docs, n_keywords = 100, n_doc_keywords = 3, tfidf_vecs = False):
-    clean_docs = [clean_doc(doc) for doc in docs]
-    idf = get_idf(clean_docs)
-    keywords = get_corpus_keywords(clean_docs, idf, n_keywords, n_doc_keywords)
-    if tfidf_vecs:
-        def doc_quant(doc):
-            doc_dict = dict(idf.get_doc_keywords(doc))
-            return lambda w : doc_dict.get(word, 0)
-    else:
-        def doc_quant(doc):
-            return lambda w : w in doc
-    vecs_to_docs = get_vecs_to_docs(clean_docs, keywords, doc_quant)
-    return vecs_to_docs, keywords
-
-#docs = list(set(db.get_clean_docs('neuro_data/neuro.sqlite')))
 class DendroDoc:
     def __init__(self, docs, num_vec_words=100, num_doc_keywords=3, stopword_ratio=.15,
             min_word_length=3):
