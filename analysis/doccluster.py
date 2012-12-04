@@ -22,11 +22,58 @@ def strip_non_alphanum(string, pattern=re.compile('[^A-Za-z ]')):
     """
     Strips everything but letters, numbers, and spaces.
     """
-    return pattern.sub('', string)
+    return pattern.sub('', ' '.join(string.split()))
+
+def get_idf(clean_docs, stopword_ratio = .15):
+    idf = tfidf.TfIdf()
+    for doc in clean_docs:
+        idf.add_input_document(doc)
+    idf.stopwords = idf.calculate_stopwords(stopword_ratio)
+    return idf
+
+def get_corpus_keywords(clean_docs, idf = None, n_keywords = 100, n_doc_keywords = 3,
+        min_word_length = 3):
+    if not idf:
+        idf = get_idf(clean_docs)
+    top_words = [(word,score) for doc in clean_docs 
+            for (word,score) in idf.get_doc_keywords(doc)[:n_doc_keywords]
+            if len(word)>=min_word_length and score>0]
+    top_word_counts = Counter(p[0] for p in top_words)
+    keywords = [word for (word, _) in top_word_counts.most_common(n_keywords)]
+    return keywords
+
+def vectorize(keywords, word_quant):
+    return tuple(word_quant(word) for word in keywords)
+
+def containment_vec(doc):
+    return lambda w : w in doc
+
+def get_vecs_to_docs(clean_docs, keywords, 
+        doc_quant = lambda d : (lambda w : w in d)):
+    vecs_to_docs = defaultdict(list)
+    for doc in clean_docs:
+        word_quant = doc_quant(doc)
+        vecs_to_docs[vectorize(keywords, word_quant)].append(doc)
+    return vecs_to_docs
+
+def vectorize_corpus(docs, n_keywords = 100, n_doc_keywords = 3, tfidf_vecs = False):
+    clean_docs = [clean_doc(doc) for doc in docs]
+    idf = get_idf(clean_docs)
+    keywords = get_corpus_keywords(clean_docs, idf, n_keywords, n_doc_keywords)
+    if tfidf_vecs:
+        def doc_quant(doc):
+            doc_dict = dict(idf.get_doc_keywords(doc))
+            return lambda w : doc_dict.get(word, 0)
+    else:
+        def doc_quant(doc):
+            return lambda w : w in doc
+    vecs_to_docs = get_vecs_to_docs(clean_docs, keywords, doc_quant)
+    return vecs_to_docs, keywords
 
 #docs = list(set(db.get_clean_docs('neuro_data/neuro.sqlite')))
 class DendroDoc:
-    def __init__(self, docs, num_vec_words=100, num_doc_keywords=3, stopword_ratio=.15):
+    def __init__(self, docs, num_vec_words=100, num_doc_keywords=3, stopword_ratio=.15,
+            min_word_length=3):
         """
         Calculates idf values. words that appear in more than `stopword_ratio`
         of the documents are given an idf of 0. Gets top `num_doc_keywords` from
@@ -47,8 +94,9 @@ class DendroDoc:
         self.idf.stopwords = self.idf.calculate_stopwords(.15) # .15 just based on trying random nums
 
         # At > top 3, I started seeing stopwords enter
-        self.top_words = [p for doc in self.clean_docs 
-                for p in self.idf.get_doc_keywords(doc)[:num_doc_keywords]]
+        self.top_words = [(word,score) for doc in self.clean_docs 
+                for (word,score) in self.idf.get_doc_keywords(doc)[:num_doc_keywords]
+                if len(word)>=min_word_length and score>0]
         self.top_word_counts = Counter(p[0] for p in self.top_words)
         self.key_words = [word for (word, _) in self.top_word_counts.most_common(num_vec_words)]
 
