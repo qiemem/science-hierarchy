@@ -181,55 +181,53 @@ class DendroDoc:
                 except AttributeError:
                     pass
 
-    def write_spato(self, filename, tree=None, depth = 23):
-        """
-        Writes a spato file for the tree. Displayable with SPaTo.
-        """
-        if tree is None:
-            tree = self.tree
-        if os.path.isfile(filename):
-            os.remove(filename)
-        if not os.path.exists(filename):
-            os.makedirs(filename)
-        with open(os.path.join(filename, 'document.xml'),'w') as docfile:
-            docfile.write('''<?xml version="1.0" ?>
-    <document>
-        <title>Document Dendrogram</title>
-        <description>blah blah blah</description>
-        <nodes src="nodes.xml" />
-        <links src="links.xml" />
-    </document>
-    ''')
-        tree_ids = {}
-        with open(os.path.join(filename, 'nodes.xml'),'w') as nodesfile:
-            nodesfile.write('<?xml version="1.0 ?>\n<nodes>\n  <projection name="LonLat" />\n')
-            i = 1
-            for t in tree.dft(depth):
-                if len(t.children)>0:
-                    words = ' '.join(':'.join(map(str, p)) for p in self.word_value_pairs(t.mean)[:5])
-                else:
-                    vec = t.mean
-                    words = '|'.join(strip_non_alphanum(title) for (title, _) in self.get_docs(vec))
-                nodesfile.write('  <node id="id{}" name="{}" location="{},{}" strength="1" />\n'.format(i, words, np.random.random(), np.random.random()))
-                tree_ids[t] = i
-                i+=1
-            nodesfile.write('</nodes>')
-        with open(os.path.join(filename, 'links.xml'),'w') as linksfile:
-            linksfile.write('<?xml version="1.0" ?>\n<links inverse="false">\n')
-            parents = {}
-            for t in tree.dft(depth):
-                parent = tree_ids[t]
-                linksfile.write('  <source index="{}">\n'.format(parent))
-                if hasattr(t, 'children'):
-                    for c in t.children:
-                        if c in tree_ids:
-                            cid = tree_ids[c]
-                            parents[cid] = parent
-                            linksfile.write('    <target index="{}" weight="1" />\n'.format(cid))
-                if parent in parents:
-                    linksfile.write('    <target index="{}" weight="1" />\n'.format(parents[parent]))
-                linksfile.write('  </source>\n')
-            linksfile.write('</links>')
+def write_spato(filename, tree, depth = 23):
+    """
+    Writes a spato file for the tree. Displayable with SPaTo.
+    """
+    if os.path.isfile(filename):
+        os.remove(filename)
+    if not os.path.exists(filename):
+        os.makedirs(filename)
+    with open(os.path.join(filename, 'document.xml'),'w') as docfile:
+        docfile.write('''<?xml version="1.0" ?>
+<document>
+    <title>Document Dendrogram</title>
+    <description>blah blah blah</description>
+    <nodes src="nodes.xml" />
+    <links src="links.xml" />
+</document>
+''')
+    tree_ids = {}
+    with open(os.path.join(filename, 'nodes.xml'),'w') as nodesfile:
+        nodesfile.write('<?xml version="1.0 ?>\n<nodes>\n  <projection name="LonLat" />\n')
+        i = 1
+        for t in tree.dft(depth):
+            if len(t.children)>0:
+                words = ' '.join(':'.join(map(str, p)) for p in word_value_pairs(t.mean)[:5])
+            else:
+                vec = t.mean
+                words = '|'.join(strip_non_alphanum(title) for (title, _) in self.get_docs(vec))
+            nodesfile.write('  <node id="id{}" name="{}" location="{},{}" strength="1" />\n'.format(i, words, np.random.random(), np.random.random()))
+            tree_ids[t] = i
+            i+=1
+        nodesfile.write('</nodes>')
+    with open(os.path.join(filename, 'links.xml'),'w') as linksfile:
+        linksfile.write('<?xml version="1.0" ?>\n<links inverse="false">\n')
+        parents = {}
+        for t in tree.dft(depth):
+            parent = tree_ids[t]
+            linksfile.write('  <source index="{}">\n'.format(parent))
+            if hasattr(t, 'children'):
+                for c in t.children:
+                    if c in tree_ids:
+                        cid = tree_ids[c]
+                        parents[cid] = parent
+                        linksfile.write('    <target index="{}" weight="1" />\n'.format(cid))
+            if parent in parents:
+                linksfile.write('    <target index="{}" weight="1" />\n'.format(parents[parent]))
+            linksfile.write('  </source>\n')
+        linksfile.write('</links>')
 
 
         
