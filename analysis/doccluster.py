@@ -35,7 +35,8 @@ def vectorize_corpus(docs, n_keywords = 100, n_doc_keywords = 3, tfidf_vecs = Fa
             return lambda w : doc_dict.get(word, 0)
     else:
         def doc_quant(doc):
-            return lambda w : w in doc
+            doc_words = set(doc.split())
+            return lambda w : w in doc_words
     vecs_to_docs = get_vecs_to_docs(clean_docs, keywords, doc_quant)
     clean_to_raw = dict(zip(clean_docs, docs))
     vecs_to_docs = {k : [clean_to_raw[d] for d in v] for (k,v) in vecs_to_docs.items()}
