@@ -1,0 +1,22 @@
+<form action="/question/{{ q_id }}/vote/" method="post">
+{% csrf_token %}
+<h1> Question {{q_id}}</h1>
+<h3> Sample Abstract</h3>
+<p>{{X}}</p>
+{% if choiceOrder %}
+    <h3> Choice A </h3>
+    <input type="radio" name="choice" id="choice1" value="1" />
+    <label for="choice1">{{ A }}</label><br />
+    <h3> Choice B </h3>
+    <input type="radio" name="choice" id="choice2" value="2" />
+    <label for="choice2">{{ B }}</label><br />
+{% else %}
+    <h3> Choice A </h3>
+    <input type="radio" name="choice" id="choice2" value="2" />
+    <label for="choice2">{{ A }}</label><br />
+    <h3> Choice B </h3>
+    <input type="radio" name="choice" id="choice1" value="1" />
+    <label for="choice1">{{ B }}</label><br />
+{% endif %}
+<input type="submit" value="Submit" />
+</form>
