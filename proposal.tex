@@ -96,7 +96,7 @@
 
 \maketitle
 \begin{abstract}
-	We will automatically find relationships between academic papers by determining keywords for each document, then clustering the documents into hierarchically-organized topic groups. We will compare multiple methods of clustering, and verify the resulting topic groups with human judgments of relatedness.
+	We will automatically find relationships between academic papers by determining keywords for each document, then clustering the documents into hierarchically-organized topic groups. We will verify the resulting topic groups with human judgments of relatedness.
 \end{abstract}
 
 \keywords{topic analysis, hierarchical clustering} % NOT required for Proceedings
@@ -105,12 +105,12 @@
 With the increase of  multidisciplinary scientific research, analyzing and clustering scientific papers by topic would allow researchers to be exposed to papers related to their work that they might not otherwise be aware of. Automatic analysis can avoid the preconceptions that would keep a researcher from recognizing related research outside of his immediate category. Additionally, it would allow researchers to more easily find other researchers to collaborate with.
 
 \section{Dataset}
-Our current top candidate is a dataset provided by Professor Konrad Kording (associated with Physiology and Applied Math). The dataset contains document titles, abstract, year of publication, journal, authors, and citations. The dataset is in MySQL, and it contains 48,222 documents.
+Our current top candidate is a dataset provided by Professor Konrad Kording (associated with Physiology and Applied Math). The dataset contains document titles, abstract, year of publication, journal, authors, and citations. The dataset is in MySQL, and it contains 48,222 documents. However, because judging the relatedness of abstracts in this dataset requires some expertise, this dataset is not ideal for our group, of which only one person has knowledge of neuroscience.
 
-We are also considering arXiv as an alternative. PubMed is another possibility. Both support bulk downloads.
+We are also using the arXiv database as another dataset.
 
 \section{Task}
-We will compare performance of multiple unsupervised learning algorithms in clustering documents hierarchically by topic using the words in the abstract as features. If we have time, we will also use additional features like authors and citations, as well as their positions in the implicit networks created by collaborations and citations, to inform the clustering of topics. 
+We will compare performance of multiple unsupervised learning algorithms in clustering documents hierarchically by topic using the words in the abstract as features.
 
 We will restrict our analysis to the abstracts of the documents as the abstracts contain the words that best represent the content of the documents. To construct our feature space, we will first identify a corpus-wide list of significant words. These words will be identified by calculating each word's corpus-wide total TF-IDF score and then either thresholding or picking the $k$-best. Next, we will represent each document as a vector of its TF-IDF scores for each of the corpus-wide significant words. We will cluster on these vectors.
 
@@ -119,19 +119,14 @@ We are using vectors of TF-IDF scores as our feature space because they (ideally
 The dendrograms resulting from this process will be labeled with the core terms that distinguish each cluster. Hence, our results should be quite human readable, despite the high dimensionality of our feature space.
 
 \section{Aspect of Task to Optimize}
-Documents will be clustered by two techniques of bisecting k-means to produce a dendrogram of clustering levels to be evaluated later. First, we will use a traditional bisecting k-means method; second, we will use a method in which the feature set is recalculated by TF-IDF at each iteration. If there is time, we can compare these to traditional agglomerative methods. 
+Documents will be clustered by two techniques of bisecting k-means to produce a dendrogram of clustering levels to be evaluated later. First, we will use a traditional bisecting k-means method; second, we will use a method in which the feature set is recalculated by TF-IDF at each iteration \cite{robertson2004} \cite{aizawa2003}.
 
 Note that relatively recent results have shown that bisecting k-means in general outperforms agglomerative methods for hierarchical clustering of documents.\cite{steinbach2000}\cite{zhao2005}
 
 \section{Performance Evaluation}
-We will evaluate the performance of this algorithm manually, comparing our clustering method with a random clustering on the feature space created using TF-IDF.
+We will evaluate the performance of this algorithm manually. We designed a forced-choice, XAB-format experiment to verify both our distance measure and our hypothesis that clustering adds value beyond that distance measure. In this experiment N subjects (N >= 3) will be shown a series (n = ~100) of random abstracts ('X'), then 2 more abstracts ('A', 'B'), with the task of simply choosing if A or B is more similar to the target X. For some stimuli, A and B are documents chosen at random with different distances from X; if subjects choose the closer document more than the farther one, this supports our distance measure as a measure of document similarity. For the other stimuli, A and B are equidistant from X, but X and A share a cluster, and B is not in that cluster. If subjects choose A as more similar more often, it supports the hypothesis that the clustering is adding something to the idea of similarity beyond the simple keyword distance.
 
-Our method of comparison will consist presenting a random abstract from the corpus to the human subject, as well as one abstract in the same cluster as this random abstract from our method of clustering and one abstract in the same cluster as the random abstract from our baseline clustering method. The human subject will then select between the two latter abstracts according to which seems most relevant to the given random abstract. Theoretically, this should give a good indication of how helpful our clustering is for scientists looking for relevant papers, as compared to our baseline random clustering over the feature space.
-
-\section{Baseline}
-Our baseline will be generating the dendrograms completely at random. This helps validate our feature space. We will compare both the traditional bisecting $k$-means as well as our modified $k$-means to this baseline.
-
-If we have time, we will also be validating against untrained bisecting $k$-means. Essentially,  we will choose two random points in the feature space; each document will then be clustered according to which random point it is closest to, using Euclidean distance. We will keep randomly bisecting the clusters in this manner as usual in bisecting $k$-means. This method of random clustering helps demonstrate that the training is actually improving things.
+Because of the size of the datasets and the feasible number of experimental subjects, we are constructing an experiment 'script' that can be presented in random order to get multiple subjects' ratings on the same XAB comparisons. This will sacrifice some breadth of the evaluation, but gives us greater support for each comparison.
 
 \section{Software to be Developed}
 \begin{itemize}

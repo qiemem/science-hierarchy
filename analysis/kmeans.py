@@ -33,8 +33,20 @@ def update_means(xs, means, dist = lambda x,y : np.linalg.norm(x-y)):
     The means of the clusters implied by the input means.
     """
     clusters = get_clusters(xs, means, dist)
-    print(map(len, clusters))
-    return np.array(map(lambda xs : np.mean(xs, 0), clusters))
+    print([len(c) for c in clusters])
+    if any(len(c)==0 for c in clusters):
+        raise Exception
+    return np.array(map(lambda x : np.mean(x,0), clusters))
+
+#def typed_mean(xs):
+    #return np.mean(xs,0)>=.5
+    #m = np.mean(xs,0)
+    #try:
+    #    if xs[0].dtype.name == 'bool':
+    #        return m>=.5
+    #except IndexError:
+    #    pass
+    #return m
 
 def kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
     means = initial_means(xs, k)
@@ -48,7 +60,7 @@ def kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
 def bisecting_kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
     print(len(xs))
     if len(xs) < k:
-        return Tree(np.mean(xs,0), [])
+        return Tree(np.mean(xs, 0), [])
     else:
         bi = lambda ys : bisecting_kmeans(ys, k, dist)
         means = kmeans(xs, k, dist)
@@ -56,9 +68,20 @@ def bisecting_kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
         return Tree(np.mean(xs,0), [bi(c) for c in clusters])
 
 class Tree:
-    def __init__(self, mean, children):
+    def __init__(self, mean, children, parent=None):
+        self.parent = parent
         self.mean = mean
         self.children = children
+
+    def __contains__(self, point):
+        if self.parent:
+            return self.closest_child(point) == self and point in self.parent
+        else:
+            return True
+
+    def closest_child(self, point):
+        i = np.argmin([np.linalg.norm(point-c.mean) for c in self.children])
+        return self.children[i]
 
     def dft(self, depth=-1):
         yield self
@@ -69,12 +92,10 @@ class Tree:
     
     @property
     def depth(self):
-        return 1 + max(c.depth for c in self.children)
+        if len(self.children):
+            return 1 + max(c.depth for c in self.children)
+        else:
+            return 1
 
-    @property
-    def num_nodes(self):
+    def __len__(self):
         return 1 + sum(c.num_nodes for c in self.children)
-
-    @property
-    def num_points(self):
-        return sum(c.num_points for c in self.children)

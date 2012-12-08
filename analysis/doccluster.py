@@ -46,7 +46,8 @@ def make_tree(vecs_to_docs):
     """
     Clusters a vector->docs dict.
     """
-    return kmeans.bisecting_kmeans(np.array(list(vecs_to_docs.keys())))
+    points = np.array(list(vecs_to_docs.keys()))
+    return kmeans.bisecting_kmeans(points)
 
 def clean_doc(doc):
     """
@@ -96,6 +97,14 @@ def get_vecs_to_docs(clean_docs, keywords,
         word_quant = doc_quant(doc)
         vecs_to_docs[vectorize(keywords, word_quant)].append(doc)
     return vecs_to_docs
+
+def word_value_pairs(keywords, vector):
+    """
+    Converts returns a list of (word, value) pairs for the given vector,
+    sorted by value.
+    """
+    word_value_pairs = zip(keywords, vector)
+    return sorted(word_value_pairs, key=lambda p:abs(p[1]), reverse=True)
 
 class DendroDoc:
     def __init__(self, docs, num_vec_words=100, num_doc_keywords=3, stopword_ratio=.15,
@@ -182,7 +191,7 @@ class DendroDoc:
                 except AttributeError:
                     pass
 
-def write_spato(filename, tree, depth = 23):
+def write_spato(filename, tree, vecs_to_docs, keywords, depth = 23):
     """
     Writes a spato file for the tree. Displayable with SPaTo.
     """
@@ -205,10 +214,10 @@ def write_spato(filename, tree, depth = 23):
         i = 1
         for t in tree.dft(depth):
             if len(t.children)>0:
-                words = ' '.join(':'.join(map(str, p)) for p in word_value_pairs(t.mean)[:5])
+                words = ' '.join(':'.join(map(str, p)) for p in word_value_pairs(keywords,t.mean)[:5])
             else:
                 vec = t.mean
-                words = '|'.join(strip_non_alphanum(title) for (title, _) in self.get_docs(vec))
+                words = '|'.join(strip_non_alphanum(title) for (title, _) in vecs_to_docs[tuple(vec)])
             nodesfile.write('  <node id="id{}" name="{}" location="{},{}" strength="1" />\n'.format(i, words, np.random.random(), np.random.random()))
             tree_ids[t] = i
             i+=1
@@ -230,7 +239,18 @@ def write_spato(filename, tree, depth = 23):
             linksfile.write('  </source>\n')
         linksfile.write('</links>')
 
+def write_treeviz(filename, tree, vecs_to_docs, keywords, depth = -1):
+    with open(filename, 'w') as out:
+        def write_node(t, d):
+            if len(t.children)==0:
+                name = strip_non_alphanum(vecs_to_docs[tuple(t.mean)][0][0])
+            else:
+                name = ' '.join(w for (w,v) in word_value_pairs(keywords,t.mean)[:10] if v>0)
+            out.write('<L{} name="{}" weight="1" depth="{}">\n'.format(d, name, d))
+            if d != depth:
+                for c in t.children:
+                    write_node(c,d+1)
+            out.write('</L{}>\n'.format(d))
+        write_node(tree, 1)
 
-        
-
-
+    
