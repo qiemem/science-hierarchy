@@ -33,7 +33,7 @@ def update_means(xs, means, dist = lambda x,y : np.linalg.norm(x-y)):
     The means of the clusters implied by the input means.
     """
     clusters = get_clusters(xs, means, dist)
-    print([len(c) for c in clusters])
+    #print([len(c) for c in clusters])
     if any(len(c)==0 for c in clusters):
         raise Exception
     return np.array(map(lambda x : np.mean(x,0), clusters))
@@ -54,11 +54,10 @@ def kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
     while np.any(means != last_means):
         last_means = means
         means = update_means(xs, means)
-        print([np.linalg.norm(x-y) for (x,y) in zip(last_means, means)])
+        #print([np.linalg.norm(x-y) for (x,y) in zip(last_means, means)])
     return means
 
-def bisecting_kmeans(xs, k = 2, dist = lambda x,y : np.linalg.norm(x-y)):
-    print(len(xs))
+def bisecting_kmeans(xs, k = 2, verbose = False, dist = lambda x,y : np.linalg.norm(x-y)):
     if len(xs) < k:
         return Tree(np.mean(xs, 0), [])
     else:
@@ -72,16 +71,19 @@ class Tree:
         self.parent = parent
         self.mean = mean
         self.children = children
+        for c in self.children:
+            c.parent = self
 
     def __contains__(self, point):
-        if self.parent:
-            return self.closest_child(point) == self and point in self.parent
-        else:
+        if self.parent is None:
             return True
+        else:
+            return self.parent.closest_child(point) == self and point in self.parent
 
     def closest_child(self, point):
         i = np.argmin([np.linalg.norm(point-c.mean) for c in self.children])
         return self.children[i]
+
 
     def dft(self, depth=-1):
         yield self
@@ -92,10 +94,10 @@ class Tree:
     
     @property
     def depth(self):
-        if len(self.children):
+        if len(self.children) == 0:
             return 1 + max(c.depth for c in self.children)
         else:
             return 1
 
     def __len__(self):
-        return 1 + sum(c.num_nodes for c in self.children)
+        return 1 + sum(len(c) for c in self.children)

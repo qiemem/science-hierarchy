@@ -1,11 +1,20 @@
 import arxiv_data.db2py as db2py
 import doccluster as dc
+import sys
 
 docs = list(set(db2py.get_docs('arxiv_data/arxiv.sqlite')))
 vecs_to_docs, keywords = dc.vectorize_corpus(docs)
 
-import testmaker
-qs = testmaker.make_dist_test(docs,vecs_to_docs,50)
+if sys.argv[1] == 'cluster':
+    import clustertestmaker
+    tree = dc.make_tree(vecs_to_docs)
+    qs = clustertestmaker.make_test(tree, vecs_to_docs)
+    choice_type = 3
+    dc.write_tree('qcluster.tree', tree, keywords)
+else:
+    import testmaker
+    qs = testmaker.make_dist_test(docs,vecs_to_docs,50)
+    choice_type = 1
 with open('keywords.txt','w') as out:
     out.write('\n'.join(keywords))
 with open('qs.txt','w') as out:
@@ -21,7 +30,7 @@ def to_dict(pk, prompt, test, controlChoice):
 			'test': '\n'.join(test),
 			'controlChoice': '\n'.join(controlChoice),
 			'selected': -1,
-			'choiceType': 1
+			'choiceType': choice_type
 		}
 	}
 

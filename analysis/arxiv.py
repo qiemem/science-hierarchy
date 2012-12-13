@@ -1,4 +1,4 @@
-import arxiv_data.db2py as db2py
+import arxiv_data.dbs_to_docs, keywords = dc.vectorize_corpus(docs) as db2py
 import doccluster as dc
 
 docs = db2py.get_docs('arxiv_data/arxiv.sqlite')

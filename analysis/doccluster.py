@@ -1,4 +1,5 @@
 from collections import Counter, defaultdict
+import random
 import neuro_data.db2py as db
 import tfidf.tfidf as tfidf
 import kmeans
@@ -253,4 +254,30 @@ def write_treeviz(filename, tree, vecs_to_docs, keywords, depth = -1):
             out.write('</L{}>\n'.format(d))
         write_node(tree, 1)
 
-    
+def write_tree(filename, tree, keywords):
+    with open(filename, 'w') as out:
+        def write_node(t, d):
+            out.write('{}{}\n'.format(' '*d, ','.join(str(x) for x in t.mean)))
+            for c in t.children:
+                write_node(c, d+1)
+        out.write(','.join(keywords)+'\n')
+        write_node(tree, 0)
+
+def write_json(filename, tree, vecs_to_docs, keywords, depth=-1):
+    import json
+    colors = ['#880000', '#008800', '#000088', '#888800', '#880088', '#008888']
+    with open(filename,'w') as out:
+        def build_json(t, d):
+            if len(t.children)==0:
+                name = vecs_to_docs[tuple(t.mean)][0][0]
+            else:
+                name = ' '.join(w for (w,v) in word_value_pairs(keywords,t.mean)[:10] if v>0)
+            return {
+                'id': str(d)+') '+name,
+                'name': name,
+                'data': {
+                    '$color': random.choice(colors)
+                },
+                'children': [build_json(c, d+1) for c in t.children if d!=depth]
+            }
+        json.dump(build_json(tree, 0), out)
